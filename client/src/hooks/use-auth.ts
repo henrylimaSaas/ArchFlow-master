@@ -1,20 +1,18 @@
-import { useUser } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
+import { authService, type AuthUser } from "@/lib/auth";
 
 export function useAuth() {
-  const { user: clerkUser, isLoaded } = useUser();
-  
-  // Busca os dados do usuário do nosso banco
-  const { data: user, isLoading: isUserLoading } = useQuery({
-    queryKey: ["/api/auth/user"],
-    enabled: !!clerkUser && isLoaded,
+  const { data: user, isLoading, error } = useQuery({
+    queryKey: ["auth", "user"],
+    queryFn: authService.getCurrentUser,
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   return {
     user,
-    clerkUser,
-    isLoading: !isLoaded || isUserLoading,
-    isAuthenticated: !!clerkUser && !!user,
+    isLoading,
+    isAuthenticated: !!user,
+    error,
   };
 }

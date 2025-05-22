@@ -29,9 +29,10 @@ export interface IStorage {
   createOffice(office: InsertOffice): Promise<Office>;
   getOfficeByEmail(email: string): Promise<Office | undefined>;
   
-  // User operations (Updated for Clerk)
-  getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: InsertUser): Promise<User>;
+  // User operations
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
   getUsersByOffice(officeId: number): Promise<User[]>;
   
   // Client operations
@@ -87,8 +88,8 @@ export class DatabaseStorage implements IStorage {
     return office;
   }
 
-  // User operations (Updated for Clerk)
-  async getUser(id: string): Promise<User | undefined> {
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
     const [user] = await db
       .select()
       .from(users)
@@ -96,22 +97,20 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async upsertUser(userData: InsertUser): Promise<User> {
+  async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          profileImageUrl: userData.profileImageUrl,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
     return user;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db
+      .insert(users)
+      .values(user)
+      .returning();
+    return newUser;
   }
 
   async getUsersByOffice(officeId: number): Promise<User[]> {

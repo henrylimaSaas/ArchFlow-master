@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { clerkAuth, syncUserWithClerk } from "./clerkAuth";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import express from "express";
 import { 
   insertOfficeSchema,

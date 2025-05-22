@@ -13,18 +13,18 @@ export const offices = pgTable("offices", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Users table - Updated for Clerk integration
+// Users table
 export const users = pgTable("users", {
-  id: text("id").primaryKey(), // Clerk user ID (string)
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
   email: text("email").notNull(),
+  password: text("password").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
-  profileImageUrl: text("profile_image_url"),
   role: text("role").notNull().default("architect"), // architect, intern, financial, marketing, admin
   officeId: integer("office_id").references(() => offices.id),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Clients table
@@ -62,7 +62,7 @@ export const tasks = pgTable("tasks", {
   status: text("status").notNull().default("todo"), // todo, in_progress, done
   priority: text("priority").notNull().default("medium"), // low, medium, high
   dueDate: timestamp("due_date"),
-  assignedTo: text("assigned_to").references(() => users.id),
+  assignedTo: integer("assigned_to").references(() => users.id),
   projectId: integer("project_id").references(() => projects.id),
   parentTaskId: integer("parent_task_id").references(() => tasks.id),
   officeId: integer("office_id").references(() => offices.id).notNull(),
@@ -89,7 +89,7 @@ export const projectFiles = pgTable("project_files", {
   fileUrl: text("file_url").notNull(),
   fileType: text("file_type").notNull(),
   projectId: integer("project_id").references(() => projects.id).notNull(),
-  uploadedBy: text("uploaded_by").references(() => users.id).notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
