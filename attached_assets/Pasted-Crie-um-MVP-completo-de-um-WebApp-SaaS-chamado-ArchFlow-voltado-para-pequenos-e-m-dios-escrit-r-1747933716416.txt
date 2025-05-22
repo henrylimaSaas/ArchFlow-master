@@ -1,0 +1,195 @@
+Crie um MVP completo de um WebApp SaaS chamado **ArchFlow**, voltado para pequenos e médios escritórios de arquitetura e engenharia.
+
+Este sistema será utilizado por arquitetos, engenheiros e seus times para gerenciar obras, tarefas, finanças e interações com clientes.
+
+O frontend pode ser em **React (com TailwindCSS)** e o backend com **Supabase**. Utilize boas práticas de estrutura, autenticação, e banco relacional.
+
+### Módulos obrigatórios:
+
+#### 1. Autenticação:
+- Apenas um superadministrador global (usuário fixo: `ArchFy`, senha: `152480`) pode acessar a área de administração total.
+- Os escritórios criam suas contas (nome do escritório, e-mail, telefone).
+- Cada escritório pode adicionar colaboradores com funções: arquiteto, estagiário, financeiro, marketing, etc.
+
+#### 2. Dashboard do Escritório:
+- Resumo com número de projetos ativos, tarefas pendentes, status financeiro atual.
+- Painel separado para cada tipo de usuário com permissões diferentes.
+
+#### 3. Projetos:
+- Criação de projetos com: nome, cliente, status, datas de início/fim, endereço da obra.
+- Visualização com filtros por status (Planejamento, Em Execução, Entregue).
+- Área para adicionar arquivos do projeto (plantas, imagens, orçamentos).
+
+#### 4. Tarefas:
+- Quadro Kanban estilo ClickUp com tarefas e subtarefas.
+- Campos: título, descrição, responsável, prioridade, prazo, status.
+- Possibilidade de comentar e acompanhar progresso.
+
+#### 5. Finanças:
+- Registro de receitas, despesas e investimentos.
+- Visualização por período e categoria (ex: aluguel, salários, softwares).
+- Gráficos de evolução financeira e saldos.
+- Tabela com filtros por tipo, data, valor e categoria.
+
+#### 6. Calculadora de Obra:
+- Ferramenta para calcular:
+  - Quantidade de tijolos para um muro com base em altura e largura.
+  - Quantidade de piso necessária para áreas em m².
+- Interface simples e responsiva.
+
+---
+
+### Tecnologias sugeridas:
+- Frontend: React com Tailwind CSS.
+- Backend: Supabase (Auth, DB, Storage).
+- Gerenciamento de estado: Zustand ou Context API.
+- Organização modular com boas práticas (components, services, hooks, pages).
+
+---
+
+### Requisitos Técnicos:
+- Componentes reutilizáveis e limpos.
+- Layout responsivo e minimalista.
+- Separação de responsabilidades entre backend e frontend.
+- Estrutura pronta para integração futura com IA e agentes externos (ex: WhatsApp).
+
+---
+
+⚠️ Observação:
+Não mostrar opção de "criar conta administrador" no login. O superadmin ArchFy é fixo e invisível na UI pública. Apenas escritórios devem criar suas próprias contas via "Criar conta para meu escritório".
+
+---
+
+Gere o projeto em estrutura de pastas pronta 
+Funcionalidades-Chave para o MVP do ArchFlow
+🔹 1. Painel de Projetos
+Listagem com nome, cliente, status e prazos
+
+
+Filtros por status e datas
+
+
+Edição e visualização de dados do projeto
+
+
+🎯 Ajuda a centralizar o controle das obras e projetos em andamento.
+
+🔹 2. Gestão de Tarefas (Kanban com Subtarefas)
+Colunas “A Fazer”, “Em Andamento”, “Concluído”
+
+
+Subtarefas com checkbox e prazos
+
+
+Arrastar e soltar
+
+
+Atribuição de responsáveis
+
+
+🎯 Permite organizar o dia a dia do time com visão clara das entregas.
+
+🔹 3. Financeiro Básico
+Cadastro de receitas, despesas e investimentos
+
+
+Tabela de transações com filtros
+
+
+Gráfico de saldo e categorias (Pizza ou Linha)
+
+
+Categorias específicas para escritórios
+Permitir ao arquiteto adicionar comissoes de reserva tecnica que ele ainda vai receber
+O arquiteto ter uma Previsão financeira de Comissoes a receber 
+
+
+🎯 Dá visibilidade financeira sem complexidade contábil.
+
+🔹 4. Cadastro de Clientes e Contatos
+Nome, telefone, e-mail, tipo de projeto, edereço 
+
+
+Observações importantes ou histórico simples
+
+
+Ligação com os projetos ativos
+
+
+🎯 Ajuda no relacionamento e evita perda de informações.
+
+🔹 5. Login com Perfis
+Acesso de administrador do escritório
+
+
+Criação de usuários para equipe: arquitetos, estagiários, financeiro etc.
+
+
+Permissões básicas por tipo (pode ser hardcoded no MVP)
+
+
+🎯 Organiza o acesso sem complicar a gestão.
+
+🔹 6. Visual Responsivo
+Design adaptado para tablets e celulares
+
+
+Kanban e financeiro acessíveis no celular
+
+
+🎯 Permite acompanhar obras e tarefas em campo.
+
+⚠️ Alertas e Notificações Simples
+Alerta de tarefa com prazo vencido
+
+
+Alerta de despesa recorrente a vencer
+
+
+🎯 Evita esquecimentos e melhora o controle.
+Funcionalidades da Calculadora de Obra (MVP)
+1. Cálculo de Tijolos para Muros
+Entradas: comprimento, altura do muro, tipo de tijolo (ex: 9x19x39 cm)
+
+
+Considerar argamassa e perdas (ex: 10%)
+
+
+Resultado: total de tijolos necessários
+
+
+2. Cálculo de Piso/Revestimento
+Entradas: largura e comprimento da área, tipo de piso (ex: 60x60 cm)
+
+
+Considerar perdas (ex: 5 a 10%)
+
+
+Resultado: total em m² e quantidade de peças
+
+
+3. Cálculo de Tinta
+Entradas: área (ou largura x altura x número de paredes), tipo de tinta (rendimento por lata)
+
+
+Considerar demãos
+
+
+Resultado: litros ou latas necessárias
+
+
+4. Cálculo de Concreto
+Entradas: volume (m³) ou dimensões (ex: 10m x 0,2m x 0,1m)
+
+
+Receita padrão de traço (ex: 1:2:3 + água)
+
+
+Resultado: quantidade de cimento, areia, brita e água
+
+
+🔧 Tecnologias sugeridas
+Pode ser um módulo simples em React com formulários e fórmulas integradas
+
+
+Banco de dados opcional, caso deseje salvar os cálculos por cliente ou projeto
