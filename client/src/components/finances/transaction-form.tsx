@@ -245,8 +245,8 @@ export default function TransactionForm({ transaction, projects, onSuccess }: Tr
               <FormItem className="md:col-span-2">
                 <FormLabel>Projeto (Opcional)</FormLabel>
                 <Select 
-                  onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
-                  value={field.value?.toString() || ""}
+                  onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
+                  value={field.value?.toString() || "none"}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -254,7 +254,7 @@ export default function TransactionForm({ transaction, projects, onSuccess }: Tr
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Nenhum projeto específico</SelectItem>
+                    <SelectItem value="none">Nenhum projeto específico</SelectItem>
                     {projects.map((project) => (
                       <SelectItem key={project.id} value={project.id.toString()}>
                         {project.name}
