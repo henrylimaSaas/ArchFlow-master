@@ -300,7 +300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/tasks/:id", authenticate, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const taskData = insertTaskSchema.partial().parse(req.body);
+      const taskData = req.body;
       
       const task = await storage.updateTask(id, taskData);
       res.json(task);

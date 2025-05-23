@@ -212,8 +212,6 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
   createdAt: true,
-}).extend({
-  dueDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
