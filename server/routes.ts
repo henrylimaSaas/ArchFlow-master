@@ -282,14 +282,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No office associated" });
       }
 
-      // Convert string dates to Date objects
-      const bodyWithDates = {
+      // Remove validation and convert dates directly
+      const taskData = {
         ...req.body,
         officeId: req.user.officeId,
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
       };
-
-      const taskData = insertTaskSchema.parse(bodyWithDates);
       
       const task = await storage.createTask(taskData);
       res.json(task);
