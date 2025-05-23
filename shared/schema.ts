@@ -1,7 +1,8 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, index, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { sql } from "drizzle-orm";
 
 // Offices table
 export const offices = pgTable("offices", {
@@ -210,14 +211,14 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
   createdAt: true,
-}).extend({
+  }).extend({
   dueDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
   createdAt: true,
-}).extend({
+  }).extend({
   date: z.string().transform(val => new Date(val)),
 });
 
