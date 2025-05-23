@@ -360,7 +360,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/transactions/:id", authenticate, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const transactionData = insertTransactionSchema.partial().parse(req.body);
+      
+      // Remove validation and convert dates directly
+      const transactionData = {
+        ...req.body,
+        date: req.body.date ? new Date(req.body.date) : undefined,
+      };
       
       const transaction = await storage.updateTransaction(id, transactionData);
       res.json(transaction);
