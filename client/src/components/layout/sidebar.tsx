@@ -26,6 +26,7 @@ const navigation = [
   { name: "Tarefas", href: "/tasks", icon: CheckSquare },
   { name: "Financeiro", href: "/finances", icon: TrendingUp },
   { name: "Clientes", href: "/clients", icon: Users },
+  { name: "Equipe", href: "/team", icon: Users },
   { name: "Calculadora", href: "/calculator", icon: Calculator },
 ];
 

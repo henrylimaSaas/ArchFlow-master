@@ -398,6 +398,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/users", authenticate, async (req: any, res) => {
+    try {
+      if (!req.user.officeId) {
+        return res.status(400).json({ message: "No office associated" });
+      }
+
+      const userData = {
+        ...req.body,
+        officeId: req.user.officeId,
+      };
+      
+      const user = await storage.createUser(userData);
+      res.json({ ...user, password: undefined });
+    } catch (error) {
+      console.error("User creation error:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  app.put("/api/users/:id", authenticate, async (req: any, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const userData = req.body;
+      
+      const user = await storage.updateUser(userId, userData);
+      res.json({ ...user, password: undefined });
+    } catch (error) {
+      console.error("User update error:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/users/:id", authenticate, async (req: any, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      await storage.deleteUser(userId);
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("User deletion error:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
