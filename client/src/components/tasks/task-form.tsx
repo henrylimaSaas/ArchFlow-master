@@ -275,14 +275,14 @@ export default function TaskForm({ task, projects, users, tasks, onSuccess }: Ta
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tarefa Pai (Sub-tarefa)</FormLabel>
-              <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} defaultValue={field.value?.toString()}>
+              <Select onValueChange={(value) => field.onChange(value && value !== "none" ? parseInt(value) : undefined)} defaultValue={field.value?.toString()}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma tarefa pai (opcional)" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma (Tarefa principal)</SelectItem>
+                  <SelectItem value="none">Nenhuma (Tarefa principal)</SelectItem>
                   {availableParentTasks.map((parentTask) => (
                     <SelectItem key={parentTask.id} value={parentTask.id.toString()}>
                       {parentTask.title}
