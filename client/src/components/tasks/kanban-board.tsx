@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Clock, AlertTriangle, CheckCircle, Plus } from "lucide-react";
+import { Clock, AlertTriangle, CheckCircle, Plus, Edit2, Trash2, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import TaskForm from "./task-form";
@@ -30,6 +32,8 @@ export default function KanbanBoard({ tasks, projects, users, onTaskUpdate }: Ka
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedColumnStatus, setSelectedColumnStatus] = useState<string>("");
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, status }: { taskId: number; status: string }) => {
@@ -47,6 +51,27 @@ export default function KanbanBoard({ tasks, projects, users, onTaskUpdate }: Ka
       toast({
         title: "Erro",
         description: "Não foi possível atualizar a tarefa.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      return apiRequest("DELETE", `/api/tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({
+        title: "Tarefa excluída",
+        description: "A tarefa foi excluída com sucesso.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir a tarefa.",
         variant: "destructive",
       });
     },
@@ -165,9 +190,58 @@ export default function KanbanBoard({ tasks, projects, users, onTaskUpdate }: Ka
                           <h4 className="font-medium text-sm leading-tight">
                             {task.title}
                           </h4>
-                          <Badge className={getPriorityColor(task.priority)}>
-                            {getPriorityText(task.priority)}
-                          </Badge>
+                          <div className="flex items-center space-x-2">
+                            <Badge className={getPriorityColor(task.priority)}>
+                              {getPriorityText(task.priority)}
+                            </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <MoreVertical className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingTask(task);
+                                    setIsEditFormOpen(true);
+                                  }}
+                                >
+                                  <Edit2 className="mr-2 h-4 w-4" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem
+                                      onSelect={(e) => e.preventDefault()}
+                                      className="text-red-600"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Excluir
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir tarefa</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja excluir a tarefa "{task.title}"? Esta ação não pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deleteTaskMutation.mutate(task.id)}
+                                        className="bg-red-600 hover:bg-red-700"
+                                      >
+                                        Excluir
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                         
                         {task.description && (
@@ -249,6 +323,26 @@ export default function KanbanBoard({ tasks, projects, users, onTaskUpdate }: Ka
           </Card>
         );
       })}
+
+      {/* Dialog para editar tarefa */}
+      <Dialog open={isEditFormOpen} onOpenChange={setIsEditFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Tarefa</DialogTitle>
+          </DialogHeader>
+          <TaskForm
+            task={editingTask}
+            projects={projects}
+            users={users}
+            tasks={tasks}
+            onSuccess={() => {
+              setIsEditFormOpen(false);
+              setEditingTask(null);
+              onTaskUpdate();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
