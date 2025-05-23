@@ -216,10 +216,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No office associated" });
       }
 
-      const projectData = insertProjectSchema.parse({
+      // Convert string dates to Date objects
+      const bodyWithDates = {
         ...req.body,
         officeId: req.user.officeId,
-      });
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      };
+
+      const projectData = insertProjectSchema.parse(bodyWithDates);
       
       const project = await storage.createProject(projectData);
       res.json(project);
@@ -274,10 +279,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No office associated" });
       }
 
-      const taskData = insertTaskSchema.parse({
+      // Convert string dates to Date objects
+      const bodyWithDates = {
         ...req.body,
         officeId: req.user.officeId,
-      });
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
+      };
+
+      const taskData = insertTaskSchema.parse(bodyWithDates);
       
       const task = await storage.createTask(taskData);
       res.json(task);
@@ -332,10 +341,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No office associated" });
       }
 
-      const transactionData = insertTransactionSchema.parse({
+      // Convert string dates to Date objects
+      const bodyWithDates = {
         ...req.body,
         officeId: req.user.officeId,
-      });
+        date: req.body.date ? new Date(req.body.date) : new Date(),
+      };
+
+      const transactionData = insertTransactionSchema.parse(bodyWithDates);
       
       const transaction = await storage.createTransaction(transactionData);
       res.json(transaction);
