@@ -9,6 +9,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Clock, AlertTriangle, CheckCircle, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import TaskForm from "./task-form";
 import type { Task, Project, User } from "@shared/schema";
 
 interface KanbanBoardProps {
@@ -27,6 +28,8 @@ const columns = [
 export default function KanbanBoard({ tasks, projects, users, onTaskUpdate }: KanbanBoardProps) {
   const { toast } = useToast();
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedColumnStatus, setSelectedColumnStatus] = useState<string>("");
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, status }: { taskId: number; status: string }) => {
@@ -206,26 +209,40 @@ export default function KanbanBoard({ tasks, projects, users, onTaskUpdate }: Ka
                 ))
               )}
               
-              <Dialog>
+              <Dialog open={isFormOpen && selectedColumnStatus === column.id} onOpenChange={(open) => {
+                if (!open) {
+                  setIsFormOpen(false);
+                  setSelectedColumnStatus("");
+                }
+              }}>
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
                     className="w-full border-dashed border-2 border-gray-300 hover:border-gray-400"
+                    onClick={() => {
+                      setSelectedColumnStatus(column.id);
+                      setIsFormOpen(true);
+                    }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Adicionar Tarefa
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Nova Tarefa - {column.title}</DialogTitle>
                   </DialogHeader>
-                  <div className="p-4">
-                    <p className="text-sm text-gray-500">
-                      Formulário de criação de tarefa será implementado aqui.
-                      Status inicial: {column.title}
-                    </p>
-                  </div>
+                  <TaskForm
+                    projects={projects}
+                    users={users}
+                    tasks={tasks}
+                    initialStatus={column.id}
+                    onSuccess={() => {
+                      setIsFormOpen(false);
+                      setSelectedColumnStatus("");
+                      onTaskUpdate();
+                    }}
+                  />
                 </DialogContent>
               </Dialog>
             </CardContent>

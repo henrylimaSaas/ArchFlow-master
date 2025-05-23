@@ -32,10 +32,11 @@ interface TaskFormProps {
   projects: Project[];
   users: User[];
   tasks: Task[];
+  initialStatus?: string;
   onSuccess: () => void;
 }
 
-export default function TaskForm({ task, projects, users, tasks, onSuccess }: TaskFormProps) {
+export default function TaskForm({ task, projects, users, tasks, initialStatus, onSuccess }: TaskFormProps) {
   const { toast } = useToast();
   
   const form = useForm<TaskFormData>({
@@ -43,7 +44,7 @@ export default function TaskForm({ task, projects, users, tasks, onSuccess }: Ta
     defaultValues: {
       title: task?.title || "",
       description: task?.description || "",
-      status: task?.status || "todo",
+      status: task?.status || initialStatus || "todo",
       priority: task?.priority || "medium",
       dueDate: task?.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "",
       projectId: task?.projectId || undefined,
