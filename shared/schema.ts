@@ -1,5 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, index } from "drizzle-orm/pg-core";
-import { jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, jsonb, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -167,7 +166,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   subtasks: many(tasks),
 }));
 
-export const export const transactionsRelations = relations(transactions, ({ one }) => ({
+export const transactionsRelations = relations(transactions, ({ one }) => ({
   project: one(projects, {
     fields: [transactions.projectId],
     references: [projects.id],
@@ -176,7 +175,7 @@ export const export const transactionsRelations = relations(transactions, ({ one
     fields: [transactions.officeId],
     references: [offices.id],
   }),
-});
+}));
 
 export const projectFilesRelations = relations(projectFiles, ({ one }) => ({
   project: one(projects, {
@@ -187,7 +186,7 @@ export const projectFilesRelations = relations(projectFiles, ({ one }) => ({
     fields: [projectFiles.uploadedBy],
     references: [users.id],
   }),
-});
+}));
 
 // Schemas para validação
 export const insertOfficeSchema = createInsertSchema(offices).omit({
