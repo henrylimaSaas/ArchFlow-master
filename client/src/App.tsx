@@ -13,6 +13,7 @@ import Tasks from "@/pages/tasks";
 import Finances from "@/pages/finances";
 import Clients from "@/pages/clients";
 import Calculator from "@/pages/calculator";
+import Team from "@/pages/team";
 import MainLayout from "@/components/layout/main-layout";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -92,6 +93,14 @@ function Router() {
         <ProtectedRoute>
           <MainLayout>
             <Calculator />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/team">
+        <ProtectedRoute>
+          <MainLayout>
+            <Team />
           </MainLayout>
         </ProtectedRoute>
       </Route>
