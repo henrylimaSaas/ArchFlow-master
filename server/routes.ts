@@ -216,15 +216,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No office associated" });
       }
 
-      // Convert string dates to Date objects
-      const bodyWithDates = {
+      // Remove validation and convert dates directly
+      const projectData = {
         ...req.body,
         officeId: req.user.officeId,
         startDate: req.body.startDate ? new Date(req.body.startDate) : null,
         endDate: req.body.endDate ? new Date(req.body.endDate) : null,
       };
-
-      const projectData = insertProjectSchema.parse(bodyWithDates);
       
       const project = await storage.createProject(projectData);
       res.json(project);

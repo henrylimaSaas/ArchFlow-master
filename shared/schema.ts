@@ -206,8 +206,14 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
   createdAt: true,
 }).extend({
-  startDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
-  endDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
+  startDate: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
+    if (!val || val === null) return null;
+    return typeof val === 'string' ? new Date(val) : val;
+  }),
+  endDate: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
+    if (!val || val === null) return null;
+    return typeof val === 'string' ? new Date(val) : val;
+  }),
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({
