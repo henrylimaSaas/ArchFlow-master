@@ -1,8 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import express from "express";
 import { 
   insertOfficeSchema,
