@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import KanbanBoard from "@/components/tasks/kanban-board";
+import TaskForm from "@/components/tasks/task-form";
 import { Plus } from "lucide-react";
 
 export default function Tasks() {
@@ -66,15 +67,16 @@ export default function Tasks() {
                   Nova Tarefa
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Nova Tarefa</DialogTitle>
                 </DialogHeader>
-                <div className="p-4">
-                  <p className="text-sm text-gray-500">
-                    Formulário de criação de tarefa será implementado aqui
-                  </p>
-                </div>
+                <TaskForm
+                  projects={projects}
+                  users={users}
+                  tasks={tasks}
+                  onSuccess={() => setIsFormOpen(false)}
+                />
               </DialogContent>
             </Dialog>
           </div>

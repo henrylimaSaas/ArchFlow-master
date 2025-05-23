@@ -212,10 +212,16 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(tasks.createdAt));
   }
 
-  async createTask(task: InsertTask): Promise<Task> {
+  async createTask(task: any): Promise<Task> {
+    // Convert string dates to Date objects before inserting
+    const taskData = {
+      ...task,
+      dueDate: task.dueDate ? (typeof task.dueDate === 'string' ? new Date(task.dueDate) : task.dueDate) : null,
+    };
+    
     const [newTask] = await db
       .insert(tasks)
-      .values(task)
+      .values(taskData)
       .returning();
     return newTask;
   }
