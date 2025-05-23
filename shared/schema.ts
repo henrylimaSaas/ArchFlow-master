@@ -205,16 +205,23 @@ export const insertClientSchema = createInsertSchema(clients).omit({
 export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
   createdAt: true,
+}).extend({
+  startDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
+  endDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
   createdAt: true,
+}).extend({
+  dueDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
   createdAt: true,
+}).extend({
+  date: z.string().transform(val => new Date(val)),
 });
 
 export const insertProjectFileSchema = createInsertSchema(projectFiles).omit({
