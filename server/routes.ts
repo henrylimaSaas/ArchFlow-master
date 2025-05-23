@@ -236,7 +236,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/projects/:id", authenticate, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const projectData = insertProjectSchema.partial().parse(req.body);
+      const projectData = {
+        ...req.body,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      };
       
       const project = await storage.updateProject(id, projectData);
       res.json(project);
