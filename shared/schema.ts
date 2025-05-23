@@ -27,11 +27,12 @@ export const sessions = pgTable(
 
 // Users table (Updated for Replit Auth)
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().notNull(), // Replit user ID
-  email: varchar("email").unique(),
+  id: serial("id").primaryKey(),
+  username: varchar("username").notNull().unique(),
+  email: varchar("email").notNull(),
+  password: varchar("password").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
   role: text("role").notNull().default("architect"), // architect, intern, financial, marketing, admin
   officeId: integer("office_id").references(() => offices.id),
   isActive: boolean("is_active").default(true),
@@ -174,7 +175,7 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
     fields: [transactions.officeId],
     references: [offices.id],
   }),
-}));
+});
 
 export const projectFilesRelations = relations(projectFiles, ({ one }) => ({
   project: one(projects, {
@@ -185,17 +186,17 @@ export const projectFilesRelations = relations(projectFiles, ({ one }) => ({
     fields: [projectFiles.uploadedBy],
     references: [users.id],
   }),
-}));
+});
 
-// Insert schemas
+// Schemas para validação
 export const insertOfficeSchema = createInsertSchema(offices).omit({
   id: true,
   createdAt: true,
 });
-
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 export const insertClientSchema = createInsertSchema(clients).omit({
@@ -211,14 +212,14 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
   createdAt: true,
-  }).extend({
+}).extend({
   dueDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
   createdAt: true,
-  }).extend({
+}).extend({
   date: z.string().transform(val => new Date(val)),
 });
 
