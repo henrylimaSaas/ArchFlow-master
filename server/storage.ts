@@ -20,6 +20,9 @@ import {
   type InsertTransaction,
   type ProjectFile,
   type InsertProjectFile,
+  type TaskStatus,
+  type InsertTaskStatus,
+  task_statuses,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sum } from "drizzle-orm";
@@ -70,6 +73,10 @@ export interface IStorage {
     monthlyRevenue: string;
     activeClients: number;
   }>;
+
+  // TaskStatus operations
+  createTaskStatus(data: InsertTaskStatus): Promise<TaskStatus>;
+  getTaskStatusesByOffice(officeId: number): Promise<TaskStatus[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -344,6 +351,23 @@ export class DatabaseStorage implements IStorage {
       monthlyRevenue: monthlyRevenueResult.sum || "0",
       activeClients: activeClientsResult.count,
     };
+  }
+
+  // TaskStatus operations
+  async createTaskStatus(data: InsertTaskStatus): Promise<TaskStatus> {
+    const [newTaskStatus] = await db
+      .insert(task_statuses)
+      .values(data)
+      .returning();
+    return newTaskStatus;
+  }
+
+  async getTaskStatusesByOffice(officeId: number): Promise<TaskStatus[]> {
+    return await db
+      .select()
+      .from(task_statuses)
+      .where(eq(task_statuses.officeId, officeId))
+      .orderBy(desc(task_statuses.createdAt));
   }
 }
 

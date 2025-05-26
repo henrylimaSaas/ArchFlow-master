@@ -11,6 +11,7 @@ import {
   insertProjectSchema,
   insertTaskSchema,
   insertTransactionSchema,
+  insertTaskStatusSchema,
 } from "@shared/schema";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
@@ -80,6 +81,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Registration error:", error);
       res.status(400).json({ message: "Registration failed" });
+    }
+  });
+
+  // Task Status routes
+  app.post("/api/task-status", authenticate, async (req: any, res) => {
+    try {
+      if (!req.user.officeId) {
+        return res.status(400).json({ message: "No office associated" });
+      }
+
+      const taskStatusData = insertTaskStatusSchema.parse({
+        ...req.body,
+        officeId: req.user.officeId,
+      });
+      
+      const taskStatus = await storage.createTaskStatus(taskStatusData);
+      res.status(201).json(taskStatus);
+    } catch (error) {
+      console.error("TaskStatus creation error:", error);
+      if (error instanceof require('zod').ZodError) {
+        return res.status(400).json({ message: "Validation failed", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create task status" });
+    }
+  });
+
+  app.get("/api/task-status", authenticate, async (req: any, res) => {
+    try {
+      if (!req.user.officeId) {
+        return res.status(400).json({ message: "No office associated" });
+      }
+      
+      const taskStatuses = await storage.getTaskStatusesByOffice(req.user.officeId);
+      res.json(taskStatuses);
+    } catch (error) {
+      console.error("TaskStatus fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch task statuses" });
     }
   });
 
