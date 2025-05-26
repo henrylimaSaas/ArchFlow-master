@@ -106,6 +106,22 @@ export const projectFiles = pgTable("project_files", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Task Statuses table
+export const task_statuses = pgTable(
+  "task_statuses",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    key: text("key").notNull(),
+    color: text("color"),
+    officeId: integer("office_id").references(() => offices.id).notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => ({
+    unq: index("task_statuses_key_office_id_unique_idx").on(table.key, table.officeId).unique(),
+  }),
+);
+
 // Relations
 export const officesRelations = relations(offices, ({ many }) => ({
   users: many(users),
@@ -113,6 +129,7 @@ export const officesRelations = relations(offices, ({ many }) => ({
   projects: many(projects),
   tasks: many(tasks),
   transactions: many(transactions),
+  task_statuses: many(task_statuses),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -122,6 +139,13 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   assignedTasks: many(tasks),
   uploadedFiles: many(projectFiles),
+}));
+
+export const taskStatusesRelations = relations(task_statuses, ({ one }) => ({
+  office: one(offices, {
+    fields: [task_statuses.officeId],
+    references: [offices.id],
+  }),
 }));
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
@@ -224,6 +248,11 @@ export const insertProjectFileSchema = createInsertSchema(projectFiles).omit({
   createdAt: true,
 });
 
+export const insertTaskStatusSchema = createInsertSchema(task_statuses).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type Office = typeof offices.$inferSelect;
 export type InsertOffice = z.infer<typeof insertOfficeSchema>;
@@ -245,3 +274,6 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
 export type ProjectFile = typeof projectFiles.$inferSelect;
 export type InsertProjectFile = z.infer<typeof insertProjectFileSchema>;
+
+export type TaskStatus = typeof task_statuses.$inferSelect;
+export type InsertTaskStatus = typeof task_statuses.$inferInsert;
