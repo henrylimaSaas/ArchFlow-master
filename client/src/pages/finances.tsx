@@ -11,10 +11,27 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { authService } from "@/lib/auth";
 import TransactionForm from "@/components/finances/transaction-form";
-import { Plus, Search, Filter, TrendingUp, TrendingDown, DollarSign, Calendar } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, Search, Filter, TrendingUp, TrendingDown, DollarSign, Calendar, BarChart3, PieChartIcon } from "lucide-react"; // Added chart icons
+import { format, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Transaction } from "@shared/schema";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
+
+// Helper for colors in Pie charts
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC0CB', '#D2B48C'];
+
 
 export default function Finances() {
   const { toast } = useToast();
@@ -62,7 +79,60 @@ export default function Finances() {
     return matchesSearch && matchesType && matchesCategory;
   });
 
-  // Calculate totals
+  // --- Chart Data Processing ---
+
+  // 1. Income vs. Expense Over Time (Monthly for last 6 months)
+  const monthlyChartData = (() => {
+    const last6Months = eachMonthOfInterval({
+      start: subMonths(new Date(), 5),
+      end: new Date(),
+    });
+
+    return last6Months.map(monthStart => {
+      const monthEnd = endOfMonth(monthStart);
+      const monthName = format(monthStart, "MMM/yy", { locale: ptBR });
+      
+      const income = transactions
+        .filter(t => t.type === 'income' && new Date(t.date) >= monthStart && new Date(t.date) <= monthEnd)
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      const expense = transactions
+        .filter(t => t.type === 'expense' && new Date(t.date) >= monthStart && new Date(t.date) <= monthEnd)
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      return { month: monthName, Receitas: income, Despesas: expense };
+    });
+  })();
+
+  // 2. Expense Breakdown by Category (Current Month)
+  const currentMonthStart = startOfMonth(new Date());
+  const currentMonthEnd = endOfMonth(new Date());
+
+  const expenseByCategoryData = (() => {
+    const categoryMap: { [key: string]: number } = {};
+    transactions
+      .filter(t => t.type === 'expense' && new Date(t.date) >= currentMonthStart && new Date(t.date) <= currentMonthEnd)
+      .forEach(t => {
+        categoryMap[t.category] = (categoryMap[t.category] || 0) + parseFloat(t.amount);
+      });
+    return Object.entries(categoryMap).map(([name, value]) => ({ name, value }));
+  })();
+  
+  // 3. Income Breakdown by Category (Current Month)
+   const incomeByCategoryData = (() => {
+    const categoryMap: { [key: string]: number } = {};
+    transactions
+      .filter(t => t.type === 'income' && new Date(t.date) >= currentMonthStart && new Date(t.date) <= currentMonthEnd)
+      .forEach(t => {
+        categoryMap[t.category] = (categoryMap[t.category] || 0) + parseFloat(t.amount);
+      });
+    return Object.entries(categoryMap).map(([name, value]) => ({ name, value }));
+  })();
+
+  // --- End Chart Data Processing ---
+
+
+  // Calculate totals for summary cards (already existing logic)
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   
@@ -332,10 +402,111 @@ export default function Finances() {
           </CardContent>
         </Card>
 
+        {/* Charts Section */}
+        <div className="my-8">
+          <h3 className="text-xl font-semibold mb-4 text-gray-800">Análise Gráfica</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <Card className="shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
+                  Receitas vs. Despesas (Últimos 6 Meses)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {monthlyChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={monthlyChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis tickFormatter={(value) => `R$${value.toLocaleString('pt-BR')}`} />
+                      <Tooltip formatter={(value: number) => `R$${value.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`} />
+                      <Legend />
+                      <Bar dataKey="Receitas" fill="#00C49F" />
+                      <Bar dataKey="Despesas" fill="#FF8042" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-center text-gray-500 py-10">Dados insuficientes para o gráfico de Receitas vs. Despesas.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <PieChartIcon className="w-5 h-5 mr-2 text-red-600" />
+                  Despesas por Categoria (Mês Atual)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {expenseByCategoryData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={expenseByCategoryData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {expenseByCategoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => `R$${value.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-center text-gray-500 py-10">Nenhuma despesa registrada este mês para exibir o gráfico.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Optional: Income by Category Chart */}
+          {incomeByCategoryData.length > 0 && (
+            <Card className="shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <PieChartIcon className="w-5 h-5 mr-2 text-green-600" />
+                  Receitas por Categoria (Mês Atual)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={incomeByCategoryData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        outerRadius={80}
+                        fill="#82CA9D"
+                        dataKey="value"
+                      >
+                        {incomeByCategoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => `R$${value.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
         {/* Transactions Table */}
-        <Card>
+        <Card className="shadow">
           <CardHeader>
-            <CardTitle>Transações</CardTitle>
+            <CardTitle>Histórico de Transações</CardTitle> {/* Changed title for clarity */}
           </CardHeader>
           <CardContent>
             {filteredTransactions.length === 0 ? (

@@ -62,6 +62,26 @@ export interface IStorage {
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransaction(id: number, transaction: Partial<InsertTransaction>): Promise<Transaction>;
   deleteTransaction(id: number): Promise<void>;
+
+  // Project File operations
+  createProjectFile(data: InsertProjectFile): Promise<ProjectFile>;
+  getProjectFilesByProjectId(projectId: number, officeId: number): Promise<ProjectFile[]>;
+  getProjectFileById(fileId: number, officeId: number): Promise<ProjectFile | undefined>;
+  deleteProjectFile(fileId: number, officeId: number): Promise<{ success: boolean, filePath?: string }>;
+
+  // Task Status operations
+  createTaskStatus(data: InsertTaskStatus): Promise<TaskStatus>;
+  getTaskStatusesByOfficeId(officeId: number): Promise<TaskStatus[]>;
+  getTaskStatusById(statusId: number, officeId: number): Promise<TaskStatus | undefined>;
+  updateTaskStatus(statusId: number, officeId: number, data: Partial<InsertTaskStatus>): Promise<TaskStatus | undefined>;
+  deleteTaskStatus(statusId: number, officeId: number): Promise<boolean>;
+  // TODO: Potentially add reorderTaskStatuses(officeId: number, statuses: { id: number, order: number }[]): Promise<void>;
+
+  // Notification operations
+  createDbNotification(data: InsertNotification): Promise<Notification>;
+  getNotificationsByUserId(userId: number, officeId: number, filters: { isRead?: boolean; limit?: number; offset?: number }): Promise<{ notifications: Notification[], unreadCount: number, totalCount: number }>;
+  markNotificationAsRead(notificationId: number, userId: number, officeId: number): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(userId: number, officeId: number): Promise<{ updatedCount: number }>;
   
   // Dashboard statistics
   getDashboardStats(officeId: number): Promise<{
@@ -344,6 +364,172 @@ export class DatabaseStorage implements IStorage {
       monthlyRevenue: monthlyRevenueResult.sum || "0",
       activeClients: activeClientsResult.count,
     };
+  }
+
+  // Project File operations
+  async createProjectFile(data: InsertProjectFile): Promise<ProjectFile> {
+    const [newFile] = await db
+      .insert(projectFiles)
+      .values(data)
+      .returning();
+    return newFile;
+  }
+
+  async getProjectFilesByProjectId(projectId: number, officeId: number): Promise<ProjectFile[]> {
+    return await db
+      .select()
+      .from(projectFiles)
+      .where(and(eq(projectFiles.projectId, projectId), eq(projectFiles.officeId, officeId)))
+      .orderBy(desc(projectFiles.createdAt));
+  }
+
+  async getProjectFileById(fileId: number, officeId: number): Promise<ProjectFile | undefined> {
+    const [file] = await db
+      .select()
+      .from(projectFiles)
+      .where(and(eq(projectFiles.id, fileId), eq(projectFiles.officeId, officeId)));
+    return file;
+  }
+
+  async deleteProjectFile(fileId: number, officeId: number): Promise<{ success: boolean, filePath?: string }> {
+    // First, retrieve the file path to return it for physical deletion
+    const fileData = await this.getProjectFileById(fileId, officeId);
+    if (!fileData) {
+      return { success: false }; // File not found or not authorized
+    }
+
+    const result = await db
+      .delete(projectFiles)
+      .where(and(eq(projectFiles.id, fileId), eq(projectFiles.officeId, officeId)))
+      .returning();
+      
+    return { success: result.length > 0, filePath: fileData.filePath };
+  }
+
+  // Task Status operations
+  async createTaskStatus(data: InsertTaskStatus): Promise<TaskStatus> {
+    const [newStatus] = await db
+      .insert(taskStatuses)
+      .values(data)
+      .returning();
+    return newStatus;
+  }
+
+  async getTaskStatusesByOfficeId(officeId: number): Promise<TaskStatus[]> {
+    return await db
+      .select()
+      .from(taskStatuses)
+      .where(eq(taskStatuses.officeId, officeId))
+      .orderBy(taskStatuses.order);
+  }
+
+  async getTaskStatusById(statusId: number, officeId: number): Promise<TaskStatus | undefined> {
+    const [status] = await db
+      .select()
+      .from(taskStatuses)
+      .where(and(eq(taskStatuses.id, statusId), eq(taskStatuses.officeId, officeId)));
+    return status;
+  }
+
+  async updateTaskStatus(statusId: number, officeId: number, data: Partial<InsertTaskStatus>): Promise<TaskStatus | undefined> {
+    const [updatedStatus] = await db
+      .update(taskStatuses)
+      .set(data)
+      .where(and(eq(taskStatuses.id, statusId), eq(taskStatuses.officeId, officeId)))
+      .returning();
+    return updatedStatus;
+  }
+
+  async deleteTaskStatus(statusId: number, officeId: number): Promise<boolean> {
+    // Note: The schema sets tasks.taskStatusId to NULL on delete of a status.
+    // Additional logic might be needed if tasks in a deleted status should be moved to a default status.
+    const result = await db
+      .delete(taskStatuses)
+      .where(and(eq(taskStatuses.id, statusId), eq(taskStatuses.officeId, officeId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  // Notification operations
+  async createDbNotification(data: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db
+      .insert(notifications)
+      .values(data)
+      .returning();
+    return newNotification;
+  }
+
+  async getNotificationsByUserId(
+    userId: number, 
+    officeId: number, 
+    filters: { isRead?: boolean; limit?: number; offset?: number }
+  ): Promise<{ notifications: Notification[], unreadCount: number, totalCount: number }> {
+    const { isRead, limit = 20, offset = 0 } = filters;
+
+    const conditions = [
+      eq(notifications.userId, userId),
+      eq(notifications.officeId, officeId)
+    ];
+    if (isRead !== undefined) {
+      conditions.push(eq(notifications.isRead, isRead));
+    }
+
+    const fetchedNotifications = await db
+      .select()
+      .from(notifications)
+      .where(and(...conditions))
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const unreadCountResult = await db
+      .select({ count: count() })
+      .from(notifications)
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.officeId, officeId),
+        eq(notifications.isRead, false)
+      ));
+      
+    const totalCountResult = await db
+      .select({ count: count() })
+      .from(notifications)
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.officeId, officeId)
+      ));
+
+    return { 
+      notifications: fetchedNotifications, 
+      unreadCount: unreadCountResult[0]?.count || 0,
+      totalCount: totalCountResult[0]?.count || 0
+    };
+  }
+
+  async markNotificationAsRead(notificationId: number, userId: number, officeId: number): Promise<Notification | undefined> {
+    const [updatedNotification] = await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(and(
+        eq(notifications.id, notificationId), 
+        eq(notifications.userId, userId), 
+        eq(notifications.officeId, officeId)
+      ))
+      .returning();
+    return updatedNotification;
+  }
+
+  async markAllNotificationsAsRead(userId: number, officeId: number): Promise<{ updatedCount: number }> {
+    const result = await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(and(
+        eq(notifications.userId, userId), 
+        eq(notifications.officeId, officeId),
+        eq(notifications.isRead, false) // Only update unread ones
+      ))
+      .returning({ id: notifications.id }); // Return IDs to count them
+    return { updatedCount: result.length };
   }
 }
 

@@ -10,8 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { authService } from "@/lib/auth";
 import ProjectForm from "@/components/projects/project-form";
-import { Plus, Search, Filter, Building, Calendar } from "lucide-react";
+import { Plus, Search, Filter, Building, Calendar, FolderArchive } from "lucide-react"; // Added FolderArchive
 import type { Project } from "@shared/schema";
+import ProjectFileUpload from "@/components/projects/ProjectFileUpload";
+import ProjectFileList from "@/components/projects/ProjectFileList";
 
 export default function Projects() {
   const { toast } = useToast();
@@ -19,8 +21,10 @@ export default function Projects() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [managingFilesForProject, setManagingFilesForProject] = useState<Project | null>(null);
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
 
-  const { data: projects = [], isLoading } = useQuery({
+  const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
 
@@ -236,32 +240,63 @@ export default function Projects() {
                       : "Data não definida"}
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          setEditingProject(project);
+                          setIsFormOpen(true);
+                        }}
+                      >
+                        Editar Projeto
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 flex-1"
+                        onClick={() => deleteProjectMutation.mutate(project.id)}
+                        disabled={deleteProjectMutation.isPending}
+                      >
+                        Excluir Projeto
+                      </Button>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      className="w-full"
                       onClick={() => {
-                        setEditingProject(project);
-                        setIsFormOpen(true);
+                        setManagingFilesForProject(project);
+                        setIsFileDialogOpen(true);
                       }}
                     >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => deleteProjectMutation.mutate(project.id)}
-                      disabled={deleteProjectMutation.isPending}
-                    >
-                      Excluir
+                      <FolderArchive className="mr-2 h-4 w-4" />
+                      Gerenciar Arquivos
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
+        )}
+
+        {/* File Management Dialog */}
+        {managingFilesForProject && (
+          <Dialog open={isFileDialogOpen} onOpenChange={setIsFileDialogOpen}>
+            <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+              <DialogHeader>
+                <DialogTitle>Arquivos do Projeto: {managingFilesForProject.name}</DialogTitle>
+              </DialogHeader>
+              <div className="flex-grow overflow-y-auto p-1">
+                <ProjectFileList projectId={managingFilesForProject.id} />
+                <div className="mt-6">
+                  <ProjectFileUpload projectId={managingFilesForProject.id} />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </div>
