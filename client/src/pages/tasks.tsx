@@ -5,24 +5,43 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import KanbanBoard from "@/components/tasks/kanban-board";
 import TaskForm from "@/components/tasks/task-form";
-import { Plus } from "lucide-react";
+import TaskStatusManager from "@/components/tasks/TaskStatusManager"; // Import the new component
+import { Plus, Settings } from "lucide-react"; // Added Settings icon
 
 export default function Tasks() {
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [isStatusManagerOpen, setIsStatusManagerOpen] = useState(false);
 
-  const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ["/api/tasks"],
+  // Fetch task statuses first, as they define the columns
+  const { data: taskStatuses = [], isLoading: isLoadingStatuses, refetch: refetchTaskStatuses } = useQuery<TaskStatus[]>({
+    queryKey: ["/api/task_statuses"],
   });
 
+  const { data: tasks = [], isLoading: isLoadingTasks, refetch: refetchTasks } = useQuery<Task[]>({
+    queryKey: ["/api/tasks"],
+    enabled: !isLoadingStatuses && taskStatuses.length > 0, // Only fetch tasks if statuses are loaded
+  });
+  
   const { data: projects = [] } = useQuery({
     queryKey: ["/api/projects"],
   });
 
   const { data: users = [] } = useQuery({
-    queryKey: ["/api/users"],
+    queryKey: ["/api/users"], // Ensure this query key is correct if used for user data
   });
 
-  if (isLoading) {
+  const handleTaskFormSuccess = () => {
+    setIsTaskFormOpen(false);
+    refetchTasks(); // Refetch tasks after a new one is created or updated
+  };
+
+  const handleStatusManagerSuccess = () => {
+    refetchTaskStatuses(); // Refetch statuses
+    refetchTasks(); // Also refetch tasks as their status associations might change
+  };
+
+
+  if (isLoadingStatuses || (isLoadingTasks && taskStatuses.length > 0) ) {
     return (
       <div className="py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
@@ -59,8 +78,20 @@ export default function Tasks() {
               Organize e acompanhe o progresso das tarefas
             </p>
           </div>
-          <div className="mt-4 flex md:mt-0 md:ml-4">
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <div className="mt-4 flex md:mt-0 md:ml-4 space-x-2">
+            <Dialog open={isStatusManagerOpen} onOpenChange={setIsStatusManagerOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Gerenciar Status
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <TaskStatusManager />
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-green-600 hover:bg-green-700">
                   <Plus className="w-4 h-4 mr-2" />
@@ -74,8 +105,9 @@ export default function Tasks() {
                 <TaskForm
                   projects={projects}
                   users={users}
-                  tasks={tasks}
-                  onSuccess={() => setIsFormOpen(false)}
+                  tasks={tasks} // For parent task selection
+                  taskStatuses={taskStatuses} // Pass statuses for selection
+                  onSuccess={handleTaskFormSuccess}
                 />
               </DialogContent>
             </Dialog>
@@ -87,7 +119,8 @@ export default function Tasks() {
           tasks={tasks} 
           projects={projects} 
           users={users}
-          onTaskUpdate={() => setIsFormOpen(false)}
+          taskStatuses={taskStatuses} // Pass statuses to Kanban board
+          onTaskUpdate={handleTaskFormSuccess} // Re-use or create specific handler for Kanban updates
         />
       </div>
     </div>
